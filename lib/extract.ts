@@ -35,9 +35,9 @@
 // }
 import fs from "fs";
 import path from "path";
-import pdfParse from "pdf-parse";
-import mammoth from "mammoth";
-import { read, utils as xlsxUtils } from "xlsx";
+// import pdfParse from "pdf-parse";
+// import mammoth from "mammoth";
+// import { read, utils as xlsxUtils } from "xlsx";
 import crypto from "crypto";
 
 const DB_PATH = path.join(process.cwd(), "uploaded_files", "chunks_db.json");
@@ -46,24 +46,24 @@ if (!fs.existsSync(DB_PATH)) fs.writeFileSync(DB_PATH, "[]", "utf-8");
 export async function extractTextFromFile(filePath: string, fileName: string): Promise<string> {
   const ext = path.extname(fileName).toLowerCase();
   try {
-    if (ext === ".pdf") {
-      const data = fs.readFileSync(filePath);
-      const result = await pdfParse(data);
-      return result.text;
-    }
-    if (ext === ".docx") {
-      const result = await mammoth.extractRawText({ path: filePath });
-      return result.value;
-    }
-    if (ext === ".xlsx") {
-      const workbook = read(fs.readFileSync(filePath));
-      let text = "";
-      workbook.SheetNames.forEach(name => {
-        const sheet = workbook.Sheets[name];
-        text += xlsxUtils.sheet_to_csv(sheet);
-      });
-      return text;
-    }
+    // if (ext === ".pdf") {
+    //   const data = fs.readFileSync(filePath);
+    //   const result = await pdfParse(data);
+    //   return result.text;
+    // }
+    // if (ext === ".docx") {
+    //   const result = await mammoth.extractRawText({ path: filePath });
+    //   return result.value;
+    // }
+    // if (ext === ".xlsx") {
+    //   const workbook = read(fs.readFileSync(filePath));
+    //   let text = "";
+    //   workbook.SheetNames.forEach(name => {
+    //     const sheet = workbook.Sheets[name];
+    //     text += xlsxUtils.sheet_to_csv(sheet);
+    //   });
+    //   return text;
+    // }
     if (ext === ".txt") {
       return fs.readFileSync(filePath, "utf-8");
     }
