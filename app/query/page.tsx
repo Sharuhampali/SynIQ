@@ -220,7 +220,7 @@ export default function QueryPage() {
         setError(data.error || "Failed to process query")
         toast.error(data.error || "Query failed")
       }
-    } catch (err) {
+    } catch  {
       setError("Network error. Please check your connection and try again.")
       toast.error("Query error")
     } finally {
@@ -240,7 +240,7 @@ export default function QueryPage() {
       setCopied(true)
       toast.success("Answer copied to clipboard!")
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
+    } catch {
       toast.error("Failed to copy to clipboard")
     }
   }

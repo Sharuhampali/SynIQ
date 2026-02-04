@@ -181,7 +181,7 @@ export default function UploadPage() {
         })
         toast.error(data.error || "Upload failed")
       }
-    } catch (err) {
+    } catch {
       setUploadResult({
         success: false,
         message: "Network error. Please check your connection and try again.",

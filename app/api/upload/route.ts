@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
     let text: string;
     try {
       text = buffer.toString("utf8");
-    } catch (e) {
+    } catch {
       return NextResponse.json({ error: "Unable to decode file as text" }, { status: 400 });
     }
 
