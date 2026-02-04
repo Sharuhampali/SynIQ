@@ -169,7 +169,7 @@ export default function HomePage() {
         <div className="relative z-10 space-y-6">
           <h2 className="text-3xl font-bold">Ready to Get Started?</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Join thousands of users who have transformed their document workflow with SynIQ's AI-powered intelligence.
+            Join thousands of users who have transformed their document workflow with SynIQ&apos;s AI-powered intelligence.
           </p>
           <Button
             asChild

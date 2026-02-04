@@ -453,7 +453,7 @@ export default function QueryPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               {[
-                { icon: MessageSquare, text: "Be specific about what you're looking for" },
+                { icon: MessageSquare, text: "Be specific about what you are looking for" },
                 { icon: Brain, text: "Ask about concepts, decisions, or findings" },
                 { icon: FileText, text: "Reference specific topics or sections" },
                 { icon: Zap, text: "Use natural language - no special syntax needed" },
