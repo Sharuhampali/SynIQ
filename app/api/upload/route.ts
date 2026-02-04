@@ -1,4 +1,3 @@
-
 // import { NextRequest, NextResponse } from "next/server";
 // import fs from "fs/promises";
 // import path from "path";
@@ -97,12 +96,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // Get file contents
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    let text: string;
 
-    // === Basic text decode (assumes text file) ===
+    // === Save the uploaded document ===
+    const uploadDir = path.join(process.cwd(), "uploaded_document");
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    const sanitizedFileName = file.name.replace(/[^a-z0-9_.-]/gi, "_"); // sanitize
+    const uploadFilePath = path.join(uploadDir, sanitizedFileName);
+
+    await fs.writeFile(uploadFilePath, buffer);
+
+    // === Decode content as UTF-8 text ===
+    let text: string;
     try {
       text = buffer.toString("utf8");
     } catch (e) {
@@ -112,18 +119,19 @@ export async function POST(req: NextRequest) {
     // === Split content into chunks ===
     const chunks = splitTextIntoChunks(text);
 
-    // === Save to chunk JSON file ===
-    const uploadDir = path.join(process.cwd(), "chunks");
-    await fs.mkdir(uploadDir, { recursive: true });
+    // === Save chunks to disk ===
+    const chunksDir = path.join(process.cwd(), "chunks");
+    await fs.mkdir(chunksDir, { recursive: true });
 
-    const chunksFileName = `chunks-${file.name}.json`;
-    const chunksFilePath = path.join(uploadDir, chunksFileName);
+    const chunksFileName = `chunks-${sanitizedFileName}.json`;
+    const chunksFilePath = path.join(chunksDir, chunksFileName);
     await fs.writeFile(chunksFilePath, JSON.stringify({ chunks }, null, 2));
 
     return NextResponse.json({
-      message: "File processed and chunks saved",
-      chunksFilePath,
-      chunkCount: chunks.length
+      message: "File uploaded, saved, and chunks generated.",
+      chunkCount: chunks.length,
+      originalFile: sanitizedFileName,
+      chunksFile: chunksFileName,
     });
   } catch (error) {
     console.error("Chunking error:", error);
