@@ -178,13 +178,15 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+interface Source {
+  filename: string
+  chunk: string
+  relevance?: number
+}
+
 interface QueryResult {
   answer: string
-  sources?: Array<{
-    filename: string
-    chunk: string
-    relevance?: number
-  }>
+  sources?: Source[]
 }
 
 export default function QueryPage() {
@@ -215,6 +217,13 @@ export default function QueryPage() {
 
       if (res.ok) {
         setResult(data)
+         if (data.sources) {
+    localStorage.setItem(
+      "usedDocs",
+      JSON.stringify(data.sources.map((s: Source) => s.filename))
+    )
+  }
+
         toast.success("Query processed successfully!")
       } else {
         setError(data.error || "Failed to process query")
@@ -431,7 +440,9 @@ export default function QueryPage() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{source.chunk}</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-5">
+                                  {source.chunk}
+                          </p>
                         </CardContent>
                       </Card>
                     ))}

@@ -172,12 +172,18 @@ function extractKeywords(query: string): string[] {
  * Simple keyword overlap scoring
  */
 function keywordScore(text: string, keywords: string[]): number {
+  if (keywords.length === 0) return 0
+
   const lower = text.toLowerCase()
-  return keywords.reduce(
-    (score, word) => score + (lower.includes(word) ? 1 : 0),
+
+  const matches = keywords.reduce(
+    (count, word) => count + (lower.includes(word) ? 1 : 0),
     0
   )
+
+  return matches / keywords.length
 }
+
 
 export async function POST(req: Request) {
   try {
@@ -237,7 +243,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       answer,
       sources: topChunks.map(c => ({
-        filename: c.filename,
+        filename: c.filename.replace("chunks-", "").replace(".json", ""),
         chunk: c.text,
         relevance: c.score,
       })),

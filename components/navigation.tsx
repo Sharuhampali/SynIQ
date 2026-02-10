@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Brain, Upload, MessageSquare } from "lucide-react"
+import { Brain, Upload, MessageSquare, FileText, Mic } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -13,6 +13,10 @@ export function Navigation() {
     { href: "/", label: "Home", icon: Brain },
     { href: "/upload", label: "Upload", icon: Upload },
     { href: "/query", label: "Query", icon: MessageSquare },
+     { href: "/documents", label: "Documents", icon: FileText },
+     { href: "/record", label: "Record", icon: Mic },
+     { href: "/notes", label: "Notes", icon: Brain }
+,
   ]
 
   return (
