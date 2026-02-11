@@ -9,55 +9,47 @@ This project is actively being developed and is currently hosted on Vercel, but 
 
 ## Core Features (Current MVP)
 1. Document Upload & Processing
-Upload TXT and PPT files
-Automatic text extraction
-Intelligent chunking system
-Stored locally for semantic retrieval
 
 2. Semantic Query System
-Keyword-based retrieval
-Context-aware answering using Google Gemini
-Source highlighting with relevance scoring
 
 3. Lecture Recording
-Live speech-to-text using Web Speech API
-Real-time transcription preview
-Converts transcript into structured notes via AI
 
 4. AI Note Generation
-Converts raw transcript into:
-Headings
-Bullet points
-Definitions
-Examples
 
 5. Document Management Dashboard
-View uploaded files
-Download documents
-Delete documents
-Minimalistic light/dark UI
 
-Tech Stack
+## Tech Stack
 
-Frontend
+Frontend:
+
 Next.js 15 (App Router)
+
 TypeScript
+
 Tailwind CSS
+
 ShadCN UI
+
 Sonner (toast notifications)
 
-Backend
+Backend:
 
 Next.js API Routes
+
 Node.js file system storage
+
 Google Gemini API for AI reasoning
 
-AI Architecture
+AI Architecture:
+
 Multi-agent architecture (conceptual layer)
+
 Retrieval-based answering
+
 AI-driven summarization and restructuring
 
-Hosting
+Hosting:
+
 Vercel
 
 ## Getting Started
