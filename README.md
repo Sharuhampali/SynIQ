@@ -1,4 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## SynIQ — AI-Powered Personal Knowledge Twin
+
+SynIQ is an intelligent second-brain system designed to help professionals retain, organize, and retrieve knowledge from lectures, documents, and conversations.
+
+It acts as a persistent AI memory layer that evolves with the user — turning scattered information into structured, searchable intelligence.
+
+⚠️ Status: Work in Progress
+This project is actively being developed and is currently hosted on Vercel, but isn't functional due to API limits
+
+## Core Features (Current MVP)
+1. Document Upload & Processing
+
+2. Semantic Query System
+
+3. Lecture Recording
+
+4. AI Note Generation
+
+5. Document Management Dashboard
+
+## Tech Stack
+
+Frontend:
+
+Next.js 15 (App Router)
+
+TypeScript
+
+Tailwind CSS
+
+ShadCN UI
+
+Sonner (toast notifications)
+
+Backend:
+
+Next.js API Routes
+
+Node.js file system storage
+
+Google Gemini API for AI reasoning
+
+AI Architecture:
+
+Multi-agent architecture (conceptual layer)
+
+Retrieval-based answering
+
+AI-driven summarization and restructuring
+
+Hosting:
+
+Vercel
 
 ## Getting Started
 
@@ -29,8 +81,3 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
