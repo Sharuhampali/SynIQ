@@ -81,7 +81,14 @@ export default function RecordPage() {
 
     try {
       // Force mic permission early
-      await navigator.mediaDevices.getUserMedia({ audio: true })
+      await navigator.mediaDevices.getUserMedia({
+  audio: {
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false,
+  },
+})
+
 
       const recognition = new Recognition()
       recognition.continuous = true

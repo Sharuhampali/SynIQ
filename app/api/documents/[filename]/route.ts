@@ -1,40 +1,47 @@
-import { NextResponse } from "next/server"
-import fs from "fs"
+import { NextRequest, NextResponse } from "next/server"
+import { promises as fs } from "fs"
 import path from "path"
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploaded_documents")
 
 export async function GET(
-  _req: Request,
-  { params }: { params: { filename: string } }
+  _req: NextRequest,
+  context: { params: { filename: string } }
 ) {
-  const filename = decodeURIComponent(params.filename)
-  const filePath = path.join(UPLOAD_DIR, filename)
+  try {
+    const filename = decodeURIComponent(context.params.filename)
+    const filePath = path.join(UPLOAD_DIR, filename)
 
-  if (!fs.existsSync(filePath)) {
+    await fs.access(filePath)
+
+    const buffer = await fs.readFile(filePath)
+
+    // Convert Buffer → Uint8Array (Fetch-compatible)
+    const uint8Array = new Uint8Array(buffer)
+
+    return new NextResponse(uint8Array, {
+      headers: {
+        "Content-Disposition": `inline; filename="${filename}"`,
+      },
+    })
+  } catch {
     return new NextResponse("Not found", { status: 404 })
   }
-
-  const buffer = fs.readFileSync(filePath)
-
-  return new NextResponse(buffer, {
-    headers: {
-      "Content-Disposition": `inline; filename="${filename}"`,
-    },
-  })
 }
 
 export async function DELETE(
-  _req: Request,
-  { params }: { params: { filename: string } }
+  _req: NextRequest,
+  context: { params: { filename: string } }
 ) {
-  const filename = decodeURIComponent(params.filename)
-  const filePath = path.join(UPLOAD_DIR, filename)
+  try {
+    const filename = decodeURIComponent(context.params.filename)
+    const filePath = path.join(UPLOAD_DIR, filename)
 
-  if (!fs.existsSync(filePath)) {
+    await fs.access(filePath)
+    await fs.unlink(filePath)
+
+    return NextResponse.json({ ok: true })
+  } catch {
     return new NextResponse("Not found", { status: 404 })
   }
-
-  fs.unlinkSync(filePath)
-  return NextResponse.json({ ok: true })
 }
