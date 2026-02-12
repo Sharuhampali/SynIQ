@@ -141,12 +141,124 @@
 
 //Workaround
 
-import { NextResponse } from "next/server"
-import fs from "fs/promises"
-import path from "path"
-import { googleGemini } from "@/lib/gemini"
+// import { NextResponse } from "next/server"
+// import fs from "fs/promises"
+// import path from "path"
+// import { googleGemini } from "@/lib/gemini"
 
-const chunksDir = path.join(process.cwd(), "chunks")
+// const chunksDir = path.join(process.cwd(), "chunks")
+
+// interface ChunkFile {
+//   chunks: string[]
+// }
+
+// interface ScoredChunk {
+//   filename: string
+//   text: string
+//   score: number
+// }
+
+// /**
+//  * Extract meaningful keywords from a query
+//  */
+// function extractKeywords(query: string): string[] {
+//   return query
+//     .toLowerCase()
+//     .split(/\W+/)
+//     .filter(word => word.length > 3)
+// }
+
+// /**
+//  * Simple keyword overlap scoring
+//  */
+// function keywordScore(text: string, keywords: string[]): number {
+//   if (keywords.length === 0) return 0
+
+//   const lower = text.toLowerCase()
+
+//   const matches = keywords.reduce(
+//     (count, word) => count + (lower.includes(word) ? 1 : 0),
+//     0
+//   )
+
+//   return matches / keywords.length
+// }
+
+
+// export async function POST(req: Request) {
+//   try {
+//     console.log("[Query API] Incoming query request...")
+
+//     const { query } = await req.json()
+
+//     if (!query || typeof query !== "string") {
+//       return NextResponse.json(
+//         { error: "Invalid query" },
+//         { status: 400 }
+//       )
+//     }
+
+//     console.log("[Query API] Query:", query)
+
+//     const keywords = extractKeywords(query)
+//     console.log("[Query API] Extracted keywords:", keywords)
+
+//     const files = await fs.readdir(chunksDir)
+//     console.log("[Query API] Found", files.length, "chunk files")
+
+//     const scoredChunks: ScoredChunk[] = []
+
+//     for (const filename of files) {
+//       const filePath = path.join(chunksDir, filename)
+//       const raw = await fs.readFile(filePath, "utf-8")
+//       const data = JSON.parse(raw) as ChunkFile
+
+//       for (const text of data.chunks) {
+//         const score = keywordScore(text, keywords)
+//         if (score > 0) {
+//           scoredChunks.push({ filename, text, score })
+//         }
+//       }
+//     }
+
+//     if (scoredChunks.length === 0) {
+//       return NextResponse.json({
+//         answer: "I couldn’t find relevant information in the uploaded documents.",
+//         sources: [],
+//       })
+//     }
+
+//     scoredChunks.sort((a, b) => b.score - a.score)
+
+//     const topChunks = scoredChunks.slice(0, 5)
+
+//     const context = topChunks.map(c => c.text).join("\n\n")
+
+//     console.log("[Query API] Sending context to Gemini...")
+
+//     const answer = await googleGemini(query, context)
+
+//     console.log("[Query API] Gemini responded.")
+
+//     return NextResponse.json({
+//       answer,
+//       sources: topChunks.map(c => ({
+//         filename: c.filename.replace("chunks-", "").replace(".json", ""),
+//         chunk: c.text,
+//         relevance: c.score,
+//       })),
+//     })
+//   } catch (error) {
+//     console.error("[Query API] Error:", error)
+//     return NextResponse.json(
+//       { error: "Internal server error" },
+//       { status: 500 }
+//     )
+//   }
+// }
+import { NextResponse } from "next/server"
+import { supabase } from "@/lib/supabaseServer.ts"
+import { googleGemini } from "@/lib/gemini"
 
 interface ChunkFile {
   chunks: string[]
@@ -158,9 +270,6 @@ interface ScoredChunk {
   score: number
 }
 
-/**
- * Extract meaningful keywords from a query
- */
 function extractKeywords(query: string): string[] {
   return query
     .toLowerCase()
@@ -168,9 +277,6 @@ function extractKeywords(query: string): string[] {
     .filter(word => word.length > 3)
 }
 
-/**
- * Simple keyword overlap scoring
- */
 function keywordScore(text: string, keywords: string[]): number {
   if (keywords.length === 0) return 0
 
@@ -184,39 +290,53 @@ function keywordScore(text: string, keywords: string[]): number {
   return matches / keywords.length
 }
 
-
 export async function POST(req: Request) {
   try {
-    console.log("[Query API] Incoming query request...")
-
     const { query } = await req.json()
 
     if (!query || typeof query !== "string") {
-      return NextResponse.json(
-        { error: "Invalid query" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid query" }, { status: 400 })
     }
 
-    console.log("[Query API] Query:", query)
-
     const keywords = extractKeywords(query)
-    console.log("[Query API] Extracted keywords:", keywords)
 
-    const files = await fs.readdir(chunksDir)
-    console.log("[Query API] Found", files.length, "chunk files")
+    // 🔹 1️⃣ List chunk files from Supabase
+    const { data: files, error: listError } = await supabase.storage
+      .from("chunks")
+      .list()
+
+    if (listError) {
+      return NextResponse.json({ error: listError.message }, { status: 500 })
+    }
+
+    if (!files || files.length === 0) {
+      return NextResponse.json({
+        answer: "No documents available for querying.",
+        sources: [],
+      })
+    }
 
     const scoredChunks: ScoredChunk[] = []
 
-    for (const filename of files) {
-      const filePath = path.join(chunksDir, filename)
-      const raw = await fs.readFile(filePath, "utf-8")
-      const data = JSON.parse(raw) as ChunkFile
+    // 🔹 2️⃣ Download and score each chunk file
+    for (const file of files) {
+      const { data, error } = await supabase.storage
+        .from("chunks")
+        .download(file.name)
 
-      for (const text of data.chunks) {
+      if (error || !data) continue
+
+      const textContent = await data.text()
+      const parsed = JSON.parse(textContent) as ChunkFile
+
+      for (const text of parsed.chunks) {
         const score = keywordScore(text, keywords)
         if (score > 0) {
-          scoredChunks.push({ filename, text, score })
+          scoredChunks.push({
+            filename: file.name,
+            text,
+            score,
+          })
         }
       }
     }
@@ -229,16 +349,11 @@ export async function POST(req: Request) {
     }
 
     scoredChunks.sort((a, b) => b.score - a.score)
-
     const topChunks = scoredChunks.slice(0, 5)
 
     const context = topChunks.map(c => c.text).join("\n\n")
 
-    console.log("[Query API] Sending context to Gemini...")
-
     const answer = await googleGemini(query, context)
-
-    console.log("[Query API] Gemini responded.")
 
     return NextResponse.json({
       answer,

@@ -64,77 +64,159 @@
 //   }
 // }
 
-import { NextRequest, NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
+// import { NextRequest, NextResponse } from "next/server";
+// import fs from "fs/promises";
+// import path from "path";
 
-// Utility to split text into chunks
+// // Utility to split text into chunks
+// function splitTextIntoChunks(text: string, maxChunkSize = 500): string[] {
+//   const paragraphs = text.split(/\n{2,}/); // Split by double newlines.
+//   const chunks: string[] = [];
+//   let currentChunk = "";
+
+//   for (const para of paragraphs) {
+//     if ((currentChunk + "\n\n" + para).length > maxChunkSize) {
+//       if (currentChunk) chunks.push(currentChunk.trim());
+//       currentChunk = para;
+//     } else {
+//       currentChunk += "\n\n" + para;
+//     }
+//   }
+
+//   if (currentChunk) chunks.push(currentChunk.trim());
+//   return chunks;
+// }
+
+// export async function POST(req: NextRequest) {
+//   try {
+//     const formData = await req.formData();
+//     const file = formData.get("file") as File;
+
+//     if (!file) {
+//       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+//     }
+
+//     const bytes = await file.arrayBuffer();
+//     const buffer = Buffer.from(bytes);
+
+//     // === Save the uploaded document ===
+//     const uploadDir = path.join(process.cwd(), "uploaded_document");
+//     await fs.mkdir(uploadDir, { recursive: true });
+
+//     const sanitizedFileName = file.name.replace(/[^a-z0-9_.-]/gi, "_"); // sanitize
+//     const uploadFilePath = path.join(uploadDir, sanitizedFileName);
+
+//     await fs.writeFile(uploadFilePath, buffer);
+
+//     // === Decode content as UTF-8 text ===
+//     let text: string;
+//     try {
+//       text = buffer.toString("utf8");
+//     } catch {
+//       return NextResponse.json({ error: "Unable to decode file as text" }, { status: 400 });
+//     }
+
+//     // === Split content into chunks ===
+//     const chunks = splitTextIntoChunks(text);
+
+//     // === Save chunks to disk ===
+//     const chunksDir = path.join(process.cwd(), "chunks");
+//     await fs.mkdir(chunksDir, { recursive: true });
+
+//     const chunksFileName = `chunks-${sanitizedFileName}.json`;
+//     const chunksFilePath = path.join(chunksDir, chunksFileName);
+//     await fs.writeFile(chunksFilePath, JSON.stringify({ chunks }, null, 2));
+
+//     return NextResponse.json({
+//       message: "File uploaded, saved, and chunks generated.",
+//       chunkCount: chunks.length,
+//       originalFile: sanitizedFileName,
+//       chunksFile: chunksFileName,
+//     });
+//   } catch (error) {
+//     console.error("Chunking error:", error);
+//     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+//   }
+// }
+import { NextRequest, NextResponse } from "next/server"
+import { supabase } from "@/lib/supabaseServer.ts"
+
 function splitTextIntoChunks(text: string, maxChunkSize = 500): string[] {
-  const paragraphs = text.split(/\n{2,}/); // Split by double newlines.
-  const chunks: string[] = [];
-  let currentChunk = "";
+  const paragraphs = text.split(/\n{2,}/)
+  const chunks: string[] = []
+  let currentChunk = ""
 
   for (const para of paragraphs) {
     if ((currentChunk + "\n\n" + para).length > maxChunkSize) {
-      if (currentChunk) chunks.push(currentChunk.trim());
-      currentChunk = para;
+      if (currentChunk) chunks.push(currentChunk.trim())
+      currentChunk = para
     } else {
-      currentChunk += "\n\n" + para;
+      currentChunk += "\n\n" + para
     }
   }
 
-  if (currentChunk) chunks.push(currentChunk.trim());
-  return chunks;
+  if (currentChunk) chunks.push(currentChunk.trim())
+  return chunks
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
+    const formData = await req.formData()
+    const file = formData.get("file") as File
 
     if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const sanitized = file.name.replace(/[^a-z0-9_.-]/gi, "_")
 
-    // === Save the uploaded document ===
-    const uploadDir = path.join(process.cwd(), "uploaded_document");
-    await fs.mkdir(uploadDir, { recursive: true });
+    // 1️⃣ Upload original document
+    const { error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(sanitized, buffer, {
+        contentType: file.type,
+        upsert: true,
+      })
 
-    const sanitizedFileName = file.name.replace(/[^a-z0-9_.-]/gi, "_"); // sanitize
-    const uploadFilePath = path.join(uploadDir, sanitizedFileName);
+    if (uploadError) {
+      return NextResponse.json({ error: uploadError.message }, { status: 500 })
+    }
 
-    await fs.writeFile(uploadFilePath, buffer);
-
-    // === Decode content as UTF-8 text ===
-    let text: string;
+    // 2️⃣ Convert to text
+    let text: string
     try {
-      text = buffer.toString("utf8");
+      text = buffer.toString("utf8")
     } catch {
-      return NextResponse.json({ error: "Unable to decode file as text" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Unable to decode file as text" },
+        { status: 400 }
+      )
     }
 
-    // === Split content into chunks ===
-    const chunks = splitTextIntoChunks(text);
+    const chunks = splitTextIntoChunks(text)
+    const chunksFileName = `chunks-${sanitized}.json`
 
-    // === Save chunks to disk ===
-    const chunksDir = path.join(process.cwd(), "chunks");
-    await fs.mkdir(chunksDir, { recursive: true });
+    // 3️⃣ Upload chunks JSON
+    const { error: chunksError } = await supabase.storage
+      .from("chunks")
+      .upload(chunksFileName, JSON.stringify({ chunks }, null, 2), {
+        contentType: "application/json",
+        upsert: true,
+      })
 
-    const chunksFileName = `chunks-${sanitizedFileName}.json`;
-    const chunksFilePath = path.join(chunksDir, chunksFileName);
-    await fs.writeFile(chunksFilePath, JSON.stringify({ chunks }, null, 2));
+    if (chunksError) {
+      return NextResponse.json({ error: chunksError.message }, { status: 500 })
+    }
 
     return NextResponse.json({
-      message: "File uploaded, saved, and chunks generated.",
-      chunkCount: chunks.length,
-      originalFile: sanitizedFileName,
+      message: "Uploaded to Supabase successfully.",
+      originalFile: sanitized,
       chunksFile: chunksFileName,
-    });
-  } catch (error) {
-    console.error("Chunking error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+      chunkCount: chunks.length,
+    })
+  } catch (err) {
+    console.error("Upload error:", err)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
